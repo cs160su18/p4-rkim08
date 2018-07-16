@@ -19,17 +19,76 @@
     <canvas id="myCanvas" width="750px" height="750px"></canvas>
 </body>
 <script>
+  var socket = new WebSocket('ws://p4-rkim08-rachelk1308203611.codeanyapp.com:8765/');  
+  
+  // setting up the canvas and one paper tool
+  var canvas = document.getElementById('myCanvas');
+  paper.setup(canvas);
+  var tool = new paper.Tool();
+  
+  
+  // getting the URL (you may want to use for Exercise 3)
+  var url = window.location.href;
+  var mySize = url.split('=')[1];
+  alert(mySize);
 
-    // setting up the canvas and one paper tool
-    var canvas = document.getElementById('myCanvas');
-    paper.setup(canvas);
-    var tool = new paper.Tool();
+  
+  socket.onmessage = function(e){console.log(event.data);};
+  socket.onopen = () => socket.send("hi");//add here
+  socket.onmessage = function (event) {
+    console.log(event.data);
+  }
+  //random color generator 
+  var myColor = 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
+ 
+  function drawCircle(xCoord,yCoord, myColor){
+    var myPoint = new paper.Point(xCoord, yCoord);
+    var myCircle = new paper.Path.Rectangle(myPoint,10);
+    myCircle.fillColor = myColor;
+  }
+ var myData = {
+    date: Date.now(),
+    xCoord:null,
+    yCoord:null,
+    fillColor: null
+  }
+  $(document).ready(function(){
+      $(myCanvas).mousemove(function(){
+        //something for just me
+        if(mySize == 'small'){
+          myData.xCoord=event.clientX;
+          myData.yCoord=event.clientY;
+          myData.fillColor=myColor;
+        }
+        socket.onopen = socket.send(JSON.stringify(myData));
+        console.log(event);
+        
+        //for everyone
+        socket.onmessage = function (event) {
+          curData= JSON.parse(event.data);
+          var viewXCoord;
+          var viewYCoord;
+          var viewFillColor;
+          if(mySize == 'small'){
+            viewXCoord = myData.xCoord;
+            viewYCoord = myData.yCoord;
+            viewFillColor = myData.fillColor;
+            console.log("individual");
+          }
+          if(mySize == 'large'){
+            viewXCoord = curData.xCoord;
+            viewYCoord = curData.yCoord;
+            viewFillColor = curData.fillColor;
+            console.log("display");
+          }
+          drawCircle(viewXCoord,viewYCoord,viewFillColor);
+          console.log("updating table");//update dot
+        }
+      });
+  });
 
-    // getting the URL (you may want to use for Exercise 3)
-    var url = window.location.href;
-
-    // var socket = new WebSocket(
-    //     'ws://your url here:8765/');
+  alert("on open");
+  
 
 
 </script>
