@@ -11,103 +11,185 @@
   <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
   <script type="text/javascript" src="https://cdn.rawgit.com/alexgibson/shake.js/master/shake.js"></script>
   <style type="text/css">
+    .column{
+      float: left;
+      width: 33.3%;
+      height: 300px;
+    }
+    
+    .img{
+    width:300px; /* you can use % */
+    height: auto;
+}
   </style>
 
 </head>
 <body>
   <!-- You may change the dimensions of this canvas -->
-  <canvas id="myCanvas" width="750px" height="750px"></canvas>
-  ahsdaf
+<!--   <canvas id="myCanvas" width="750px" height="750px"></canvas>
+  ahsdaf -->
+  <div class="container">
+    <div class="row">
+      <div class="column name left">
+        <h1>
+          Chris Evans 
+        </h1>
+        <img id="image1" src="https://nerdist.com/wp-content/uploads/2017/09/Chris-Evans-Civil-War-Featured-09032017.jpg"
+             height="39%">
+        <div id="button1">small only button1</div>
+      </div>
+      <div class="column" id = "middle">
+        <h1>
+          Round 4
+        </h1>
+          <h2>
+            Time Left: <span id="timer"></span>
+          </h2>
+        <h3>
+          Voted: <span id="votes"></span>
+        </h3>
+      </div>
+      <div class="column name right">
+        <h1>
+          Chris Hemsworth
+        </h1>
+        <img id ="image2" src="https://media1.popsugar-assets.com/files/thumbor/eRgyxijJAFuDedWpseMrQLH_Ukg/fit-in/1024x1024/filters:format_auto-!!-:strip_icc-!!-/2017/07/12/947/n/1922153/f7ae2f935966985ddd1c24.58224079_edit_img_cover_file_15110365_1499895175/i/Chris-Hemsworth-Grooming-Interview.jpg"
+               width ="60%">
+        <div id="button2">small only button2</div>
+      </div>
+    </div>
+  </div>
 </body>
 <script>
+  //timer
+  function startTimer(duration) {
+    var timer = duration;
+    var min;
+    var sec;
+    setInterval(function () {
+        min = parseInt(timer / 60, 10);
+        sec = parseInt(timer % 60, 10);
+     
+        sec = sec < 10 ? "0" + sec : sec;
 
-  // setting up the canvas and one paper tool
-  var canvas = document.getElementById('myCanvas');
-  var context = canvas.getContext('2d');
-  paper.setup(canvas);
-  var tool = new paper.Tool();
+        document.getElementById("timer").innerHTML = min + ":" + sec;
 
-  // getting the URL (you may want to use for Exercise 3)
+        if (timer-- <= 0) {
+            stop();
+        }
+    }, 1000);
+}
+  
+  function stop() {
+    document.getElementById("timer").innerHTML = "00:00";
+  }
+  
+  function winner() {
+    alert("Chris Hemsworth is the winner");
+  }
+
+ //two displays
   var url = window.location.href;
   var mySize = url.split('=')[1];
   
-  function canvasClear(){
-    var rect = new paper.Rectangle(
-      new paper.Point(0,0),
-      new paper.Size(canvas.width,canvas.height)
-    );
-    var rectPath = new paper.Path.Rectangle(rect);
-    rectPath.fillColor = 'white';          
+  var numofVotes = 0;
+  function increase() {
+    numofVotes++;
+    document.getElementById("votes").innerHTML = numofVotes;
+    alert(numofVotes);
   }
   
-  var socket = new WebSocket('ws://p4-christttto-christttto412990.codeanyapp.com:8765/');
+  var myData = {
+//     time: document.getElementById("timer").innerHTML,
+    numofVotes, 
+    voted: null,
+    left: null,
+    right: null,
+  }
+  
+  var socket = new WebSocket('ws://p4-rkim08-rachelk1308203611.codeanyapp.com:8765/');
   socket.onmessage = function(e){console.log(event.data);};
   socket.onopen = () => socket.send("hi");//add here
-  socket.onmessage = function (event) {
-    console.log(event.data);
-  }
-  var myColor = 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';
-  function drawCircle(xCoord,yCoord, myColor){
-    var myPoint = new paper.Point(xCoord, yCoord);
-    var myCircle = new paper.Path.Circle(myPoint,30);
-    myCircle.fillColor = myColor;
-  }
-  var myData = {
-    date: Date.now(),
-    xCoord:null,
-    yCoord:null,
-    fillColor: null
-  }
   
-  var shakeEvent = new Shake({threshold: 15});
-  shakeEvent.start();
-  function stopShake(){
-    shakeEvent.stop();
+  //var making
+  var voteData ={
+    vote: null,
+    id: null
   }
+  var voteCollection = {
+    totalV: 0,
+    currentV: 0,
+    voters: 0,
+    voted1: 0,
+    voted2: 0
+  }
+  //display setup
+  $("#votes").html(voteCollection.currentV);
+ 
+   window.onload = function () {
+        startTimer(15);
+       };
   
-  $(document).ready(function(){
-    window.addEventListener('shake',function(){
-      canvasClear();
-    },false);
-    window.addEventListener("orientationchange", function() {
-      if(-70>window.orientation){
-        myColor = 'rgb(' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ',' + (Math.floor(Math.random() * 256)) + ')';   
-      }
-    });
-    $(myCanvas).mousemove(function(){
-      //something for just me
-      if(mySize == 'small'){
-        myData.xCoord=event.clientX;
-        myData.yCoord=event.clientY;
-        myData.fillColor=myColor;
-      }
-      socket.onopen = socket.send(JSON.stringify(myData));
-      console.log(event);
-
-      //for everyone
-      socket.onmessage = function (event) {
-        curData= JSON.parse(event.data);
-        var viewXCoord;
-        var viewYCoord;
-        var viewFillColor;
-        if(mySize == 'small'){
-          viewXCoord = myData.xCoord;
-          viewYCoord = myData.yCoord;
-          viewFillColor = myData.fillColor;
-          console.log("smolllll doge");
-        }
-        if(mySize == 'large'){
-          viewXCoord = curData.xCoord;
-          viewYCoord = curData.yCoord;
-          viewFillColor = curData.fillColor;
-          console.log("large doge");
-        }
-        drawCircle(viewXCoord,viewYCoord,viewFillColor);
-        console.log("ertw");//update dot
-      }
-    });
+  //vote click
+  $("#button1").click(function(e){
+    voteData.vote=1;
+    socket.onopen = socket.send(JSON.stringify(voteData));
+    console.log("voter1send");
   });
-  alert("asdf");
+  $("#button2").click(function(e){
+    voteData.vote=2;
+    socket.onopen = socket.send(JSON.stringify(voteData));
+    console.log("voter2send");
+  });
+  
+  //take in vote
+  socket.onmessage = function(event){
+    curData=JSON.parse(event.data);
+    //check if already voted
+    //if vote 1 add vote 1
+    if(curData.vote==1){
+      voteCollection.voted1++;
+      voteCollection.voters++;
+    }
+    //if vote 2 add vote 2
+    else if(curData.vote==2){
+      voteCollection.voted2++;
+      voteCollection.voters++;
+    }
+    console.log(voteCollection);
+    //update count
+    //$currentV.innerHTML(voteCollection.currentV);
+    //$jsValue.innerHTML = $jsName.value;
+    $("#votes").html(voteCollection.voters);
+  }
+  function finalResult(){
+    //alert who won
+    if(voteCollection.voted1>voteCollection.voted2){
+      alert("Chris Hemsworth"+" won!");
+    }
+    else if(voteCollection.voted1<voteCollection.voted2){
+      alert("Chris Evans"+" won!");
+    }
+    else{
+      alert("Tie!");
+    }
+  }
+  
+  if(mySize == "large") {
+    document.getElementById('button1').style.visibility='hidden';
+    document.getElementById('button2').style.visibility='hidden';
+  }
+  
+  if(mySize =="small") {
+    document.getElementById('image1').style.display="none";
+    document.getElementById('image2').style.display="none";
+    document.getElementById('middle').style.visibility='hidden';
+  }
+  
+  setTimeout(finalResult, 1000*17);
+
+
   
 </script>
 </html>
+
